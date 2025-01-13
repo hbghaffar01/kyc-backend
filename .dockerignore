@@ -1,0 +1,8 @@
+node_modules
+Dockerfile
+docker-compose.yml
+*.log
+.vscode
+npm-debug.log
+yarn.lock
+.npmrc
