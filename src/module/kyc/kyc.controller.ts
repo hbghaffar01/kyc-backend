@@ -26,7 +26,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import * as cloudinary from 'cloudinary';
 import * as uuid from 'uuid';
 import * as path from 'path';
-import * as fs from 'fs';
+import { memoryStorage } from 'multer';
 
 cloudinary.v2.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -48,7 +48,7 @@ export class KycController {
   @ApiBearerAuth()
   @UseInterceptors(
     FileInterceptor('document', {
-      dest: './uploads/kyc-documents',
+      storage: memoryStorage(),
     }),
   )
   async submitKyc(
@@ -59,13 +59,15 @@ export class KycController {
     if (file) {
       const fileName = `${uuid.v4()}${path.extname(file.originalname)}`;
 
-      const uploadResult = await cloudinary.v2.uploader.upload(file.path, {
+      const base64String = file.buffer.toString('base64');
+      const dataURI = `data:${file.mimetype};base64,${base64String}`;
+
+      const uploadResult = await cloudinary.v2.uploader.upload(dataURI, {
         public_id: fileName,
         resource_type: 'auto',
       });
 
       submitKycDto.documentUrl = uploadResult.secure_url;
-      fs.unlinkSync(file.path);
     }
 
     return this.kycService.submitKyc(submitKycDto, user.email);
